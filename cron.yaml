@@ -1,0 +1,4 @@
+cron:
+  - name: zap-imoveis-scraper
+    path: /run
+    schedule: "0 8 * * *"
