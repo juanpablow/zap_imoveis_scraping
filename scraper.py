@@ -1,6 +1,6 @@
-import csv
 from urllib.parse import urlencode
 
+import pandas as pd
 from playwright.sync_api import sync_playwright
 
 
@@ -17,7 +17,8 @@ def build_url(type_slug, state, page, area_min, area_max):
     return f"{base_url}?{urlencode(params)}"
 
 
-def scrap_zap_state(types, state, area_min=50, area_max=1000):
+def scrape_zap_state(types, state, area_min=50, area_max=1000):
+    results = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -28,66 +29,99 @@ def scrap_zap_state(types, state, area_min=50, area_max=1000):
         )
         page = context.new_page()
 
-        with open(
-            "imoveis_comerciais.csv", "w", newline="", encoding="utf-8-sig"
-        ) as file:
-            writer = csv.writer(file)
-            writer.writerow(
-                ["Estado", "Tipo", "Titulo", "Endereço", "Área", "Preço", "Link"]
-            )
+        for type in types:
+            current_page = 1
+            while True:
+                url = build_url(type, state, current_page, area_min, area_max)
+                print(f"[{state.upper()} - {type}] Página {current_page} -> {url}")
 
-            for type in types:
-                current_page = 1
-                while True:
-                    url = build_url(type, state, current_page, area_min, area_max)
-                    print(f"[{state.upper()} - {type}] Página {current_page} -> {url}")
+                page.goto(url)
+                try:
+                    page.wait_for_selector(
+                        "li[data-cy='rp-property-cd']", timeout=10000
+                    )
+                except:
+                    print("  ⚠️  Nenhum resultado encontrado ou fim das páginas.")
+                    break
 
-                    page.goto(url)
+                items = page.query_selector_all("li[data-cy='rp-property-cd']")
+                if not items:
+                    break
+
+                for item in items:
                     try:
-                        page.wait_for_selector(
-                            "li[data-cy='rp-property-cd']", timeout=10000
+                        title = item.query_selector("h2")
+                        address = item.query_selector(
+                            "p[data-cy='rp-cardProperty-street-txt']"
                         )
-                    except:
-                        print("  ⚠️  Nenhum resultado encontrado ou fim das páginas.")
-                        break
+                        area = item.query_selector(
+                            "li[data-cy='rp-cardProperty-propertyArea-txt']"
+                        )
+                        price = item.query_selector(
+                            "div[data-cy='rp-cardProperty-price-txt']"
+                        )
+                        link = item.query_selector("a")
 
-                    items = page.query_selector_all("li[data-cy='rp-property-cd']")
-                    if not items:
-                        break
+                        # writer.writerow(
+                        #     [
+                        #         state.upper(),
+                        #         type,
+                        #         title.inner_text().strip() if title else "",
+                        #         address.inner_text().strip() if address else "",
+                        #         area.inner_text().strip() if area else "",
+                        #         price.inner_text().strip() if price else "",
+                        #         link.get_attribute("href") if link else "",
+                        #     ]
+                        # )
 
-                    for item in items:
-                        try:
-                            title = item.query_selector("h2")
-                            address = item.query_selector(
-                                "p[data-cy='rp-cardProperty-street-txt']"
-                            )
-                            area = item.query_selector(
-                                "li[data-cy='rp-cardProperty-propertyArea-txt']"
-                            )
-                            price = item.query_selector(
-                                "div[data-cy='rp-cardProperty-price-txt']"
-                            )
-                            link = item.query_selector("a")
+                        title_text = (
+                            title.evaluate("node => node.textContent").strip()
+                            if title
+                            else ""
+                        )
+                        address_text = (
+                            address.evaluate("node => node.textContent").strip()
+                            if address
+                            else ""
+                        )
+                        area_text = (
+                            area.evaluate("node => node.textContent").strip()
+                            if area
+                            else ""
+                        )
+                        price_text = (
+                            price.evaluate("node => node.textContent").strip()
+                            if price
+                            else ""
+                        )
+                        link_href = link.get_attribute("href") if link else ""
 
-                            writer.writerow(
-                                [
-                                    state.upper(),
-                                    type,
-                                    title.inner_text().strip() if title else "",
-                                    address.inner_text().strip() if address else "",
-                                    area.inner_text().strip() if area else "",
-                                    price.inner_text().strip() if price else "",
-                                    link.get_attribute("href") if link else "",
-                                ]
-                            )
-                        except Exception as e:
-                            print("Erro ao processar item:", e)
+                        results.append(
+                            [
+                                state.upper(),
+                                type,
+                                title_text,
+                                address_text,
+                                area_text,
+                                price_text,
+                                link_href,
+                            ]
+                        )
 
-                    current_page += 1
+                    except Exception as e:
+                        print("Erro ao processar item:", e)
+
+                current_page += 1
 
         browser.close()
+
+    df = pd.DataFrame(
+        results,
+        columns=["Estado", "Tipo", "Título", "Endereço", "Área", "Preço", "Link"],
+    )
+    df.to_excel("imoveis_comerciais.xlsx", index=False)
 
 
 if __name__ == "__main__":
     types = ["galpao-deposito-armazem"]
-    scrap_zap_state(types)
+    scrape_zap_state(types)
