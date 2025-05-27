@@ -11,9 +11,8 @@ types = ["galpao-deposito-armazem"]
 exit_file = "imoveis_comerciais.xlsx"
 
 now = datetime.now()
-date_filter = now.strftime("%d/%m/%Y")
-
-exit_file = f"imoveis_{date_filter.replace('/', '-')}.xlsx"
+date_filter = now.strftime("%d/%m/%Y %H:%M")
+exit_file = f"imoveis_{now.strftime('%d-%m-%Y_%Hh%M')}.xlsx"
 
 results = []
 
