@@ -13,6 +13,7 @@ def build_url(type_slug, state, page, area_min, area_max):
         "pagina": page,
         "areaMinima": area_min,
         "areaMaxima": area_max,
+        "ordem": "Mais recente",
     }
     return f"{base_url}?{urlencode(params)}"
 
@@ -99,7 +100,7 @@ def scrape_zap_state(types, state, area_min=50, area_max=1000):
                         results.append(
                             [
                                 state.upper(),
-                                type,
+                                # type,
                                 title_text,
                                 address_text,
                                 area_text,
@@ -117,9 +118,11 @@ def scrape_zap_state(types, state, area_min=50, area_max=1000):
 
     df = pd.DataFrame(
         results,
-        columns=["Estado", "Tipo", "Título", "Endereço", "Área", "Preço", "Link"],
+        columns=["Estado", "Título", "Endereço", "Área", "Preço", "Link"],
     )
-    df.to_excel("imoveis_comerciais.xlsx", index=False)
+
+    return df
+    # df.to_excel("imoveis_comerciais.xlsx", index=False)
 
 
 if __name__ == "__main__":
