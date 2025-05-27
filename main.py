@@ -23,6 +23,12 @@ for state in states:
     results.append(df)
 
 final_df = pd.concat(results, ignore_index=True)
+
+existing_df = pd.read_excel(exit_file)
+combined_df = pd.concat([existing_df, final_df], ignore_index=True)
+# Remove duplicates based on column link
+final_df = combined_df.drop_duplicates(subset="Link")
+
 final_df.to_excel(exit_file, index=False)
 
 format_columns(exit_file)
