@@ -39,10 +39,12 @@ def scrape_zap_state(types, state, area_min=50, area_max=1000):
                 page.goto(url)
                 try:
                     page.wait_for_selector(
-                        "li[data-cy='rp-property-cd']", timeout=11000
+                        "li[data-cy='rp-property-cd']", timeout=15000
                     )
+                    page.wait_for_timeout(1200)
+
                 except:
-                    print("  ⚠️  Nenhum resultado encontrado ou fim das páginas.")
+                    print("Nenhum resultado encontrado ou fim das páginas.")
                     break
 
                 items = page.query_selector_all("li[data-cy='rp-property-cd']")
