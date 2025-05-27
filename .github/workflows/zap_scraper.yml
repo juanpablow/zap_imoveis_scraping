@@ -3,6 +3,8 @@ name: Zap Scraper Daily
 on:
   schedule:
     - cron: "0 11 * * *" # 08:00 BRT
+    - cron: "0 17 * * *" # 14:00 BRT
+
   workflow_dispatch:
 
 jobs:
