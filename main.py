@@ -9,7 +9,13 @@ from format_columns import format_columns
 from scraper import scrape_zap_state
 
 states = ["sc", "rs"]
-types = ["galpao-deposito-armazem"]
+types = [
+    "sala_comercial",
+    "imovel-comercial_comercial",
+    "galpao_comercial",
+    "garagem_comercial",
+]
+
 
 is_github_actions = os.getenv("GITHUB_ACTIONS") == "true"
 
